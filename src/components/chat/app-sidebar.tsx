@@ -8,6 +8,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 type AppStatus = 'connected' | 'disconnected' | 'connecting'
 import { toast } from "sonner"
+import ConfirmDialog from "@/components/confirm-dialog"
 
 type GoogleApp = {
     id: string
@@ -25,6 +26,8 @@ export default function EnhancedAppsSidebar({ isOpen = true }: { isOpen?: boolea
     const queryClient = useQueryClient()
     const [isCollapsed, setIsCollapsed] = useState(false)
     const [connectingAppId, setConnectingAppId] = useState<string | null>(null)
+    const [confirmOpen, setConfirmOpen] = useState(false)
+    const [pendingDisconnectAppId, setPendingDisconnectAppId] = useState<string | null>(null)
 
     const appIcons = {
         gmail: <Mail className="w-5 h-5" />,
@@ -110,8 +113,22 @@ export default function EnhancedAppsSidebar({ isOpen = true }: { isOpen?: boolea
         }
     })
 
-    const handleDisconnect = (appId: string) => {
-        disconnectMutation.mutate(appId)
+    const handleDisconnectRequest = (appId: string) => {
+        setPendingDisconnectAppId(appId)
+        setConfirmOpen(true)
+    }
+
+    const handleConfirmDisconnect = () => {
+        if (pendingDisconnectAppId) {
+            disconnectMutation.mutate(pendingDisconnectAppId)
+        }
+        setConfirmOpen(false)
+        setPendingDisconnectAppId(null)
+    }
+
+    const handleCancelDisconnect = () => {
+        setConfirmOpen(false)
+        setPendingDisconnectAppId(null)
     }
 
     useEffect(() => {
@@ -278,7 +295,7 @@ export default function EnhancedAppsSidebar({ isOpen = true }: { isOpen?: boolea
                                                                 variant="outline"
                                                                 size="sm"
                                                                 className="w-full text-destructive border-destructive/20 hover:bg-destructive/10"
-                                                                onClick={() => handleDisconnect(app.id)}
+                                                                onClick={() => handleDisconnectRequest(app.id)}
                                                             >
                                                                 Disconnect
                                                             </Button>
@@ -355,6 +372,19 @@ export default function EnhancedAppsSidebar({ isOpen = true }: { isOpen?: boolea
                     </div>
                 )}
             </div>
+
+            <ConfirmDialog
+                open={confirmOpen}
+                title="Disconnect app?"
+                message={
+                    pendingDisconnectAppId
+                        ? `Are you sure you want to disconnect ${apps.find(a => a.id === pendingDisconnectAppId)?.name || 'this app'}? This will revoke its access.`
+                        : "Are you sure you want to disconnect this app? This will revoke its access."
+                }
+                confirmText={disconnectMutation.isPending ? "Disconnecting..." : "Disconnect"}
+                onConfirm={handleConfirmDisconnect}
+                onCancel={handleCancelDisconnect}
+            />
         </div>
     )
 

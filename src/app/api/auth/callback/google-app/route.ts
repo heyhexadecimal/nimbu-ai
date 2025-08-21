@@ -42,9 +42,9 @@ export async function GET(req: NextRequest) {
             tokens.scope?.split(' ') || []
         )
 
-        return NextResponse.redirect(`${process.env.NEXTAUTH_URL}/apps?connected=${appId}`)
+        return NextResponse.redirect(`${process.env.NEXTAUTH_URL}/chat?connected=${appId}`)
     } catch (error) {
         console.error('Error handling Google app callback:', error)
-        return NextResponse.redirect(`${process.env.NEXTAUTH_URL}/apps?error=callback_error`)
+        return NextResponse.redirect(`${process.env.NEXTAUTH_URL}/chat?error=callback_error`)
     }
 }

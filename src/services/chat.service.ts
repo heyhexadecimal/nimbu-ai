@@ -197,7 +197,7 @@ export class ChatService {
         const hasPermission = await this.appPermissionService.hasAppPermission(this.user.id, requiredApp)
 
         if (!hasPermission) {
-            const errorMsg = `❌ **${agentName} Not Connected**\n\nTo use ${agentName} features, please connect your ${agentName} account first.\n\n[Go to Apps Settings](/apps) to connect ${agentName}.`
+            const errorMsg = `❌ **${agentName} Not Connected**\n\nTo use ${agentName} features, please connect your ${agentName} account first.`
             controller.enqueue(encoder.encode(errorMsg))
             completeResponse += errorMsg
             await this.conversationService.saveAssistantMessage(threadId, completeResponse)
