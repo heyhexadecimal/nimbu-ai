@@ -13,6 +13,7 @@ import {
 import { twMerge } from "tailwind-merge"
 
 import { AnimatePresence, motion } from "motion/react"
+import AppsSidebar from "@/components/chat/app-sidebar"
 
 export default function Layout() {
     const { data: session, status } = useSession()
@@ -67,10 +68,13 @@ export default function Layout() {
             </Button>
 
             <div className="flex-1 w-full">
-                <ChatInterface 
+                <ChatInterface
                     threadId={params?.threadId as string}
                 />
             </div>
+
+            <AppsSidebar />
+
         </div>
     )
 }

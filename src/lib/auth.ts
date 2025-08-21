@@ -4,7 +4,30 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter"
 import { prisma } from "@/lib/prisma"
 import { google } from "googleapis"
 
-// Function to refresh access token using refresh token
+export const APP_CONFIGURATIONS = {
+  gmail: {
+    name: 'Gmail',
+    scopes: [
+      'https://www.googleapis.com/auth/gmail.modify',
+      'https://www.googleapis.com/auth/gmail.compose',
+      'https://www.googleapis.com/auth/gmail.send'
+    ]
+  },
+  calendar: {
+    name: 'Google Calendar',
+    scopes: [
+      'https://www.googleapis.com/auth/calendar.events',
+      'https://www.googleapis.com/auth/calendar.readonly'
+    ]
+  },
+  meet: {
+    name: 'Google Meet',
+    scopes: [
+      'https://www.googleapis.com/auth/calendar.events'
+    ]
+  }
+}
+
 export async function refreshAccessToken(refreshToken: string) {
   try {
     const oauth2Client = new google.auth.OAuth2(
@@ -21,7 +44,7 @@ export async function refreshAccessToken(refreshToken: string) {
     return {
       accessToken: credentials.access_token!,
       expiresAt: credentials.expiry_date!,
-      refreshToken: refreshToken, // Keep the same refresh token
+      refreshToken: refreshToken,
     }
   } catch (error) {
     console.error('Error refreshing access token:', error)
@@ -40,17 +63,10 @@ export const authOptions: NextAuthOptions = {
           scope: [
             "openid",
             "email",
-            "profile",
-            "https://www.googleapis.com/auth/gmail.modify",
-            "https://www.googleapis.com/auth/gmail.compose",
-            "https://www.googleapis.com/auth/gmail.send",
-            "https://www.googleapis.com/auth/calendar.events",
-            "https://www.googleapis.com/auth/calendar.readonly"
-
+            "profile"
           ].join(" "),
           access_type: "offline",
           prompt: "consent"
-
         }
       },
       httpOptions: {
@@ -60,7 +76,6 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async jwt({ token, account, trigger, user }) {
-      // Initial sign in
       if (account) {
         token.accessToken = account.access_token
         token.refreshToken = account.refresh_token
@@ -69,13 +84,11 @@ export const authOptions: NextAuthOptions = {
         return token
       }
 
-      // Ensure userId is preserved in subsequent calls
       if (!token.userId && user?.id) {
         token.userId = user.id
       }
 
-      // Check if access token has expired
-      if (token.expiresAt && typeof token.expiresAt === 'number' && Date.now() > token.expiresAt - 60000) { // Refresh 1 minute before expiry
+      if (token.expiresAt && typeof token.expiresAt === 'number' && Date.now() > token.expiresAt - 60000) {
         try {
           if (token.refreshToken) {
             const refreshedTokens = await refreshAccessToken(token.refreshToken as string)
@@ -85,7 +98,6 @@ export const authOptions: NextAuthOptions = {
           }
         } catch (error) {
           console.error('Failed to refresh token:', error)
-          // Clear expired tokens
           token.accessToken = undefined
           token.refreshToken = undefined
           token.expiresAt = undefined

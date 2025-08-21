@@ -46,9 +46,10 @@ model User {
   isDeleted     Boolean   @default(false)
   deletedAt     DateTime?
 
-  accounts      Account[]
-  sessions      Session[]
-  conversations Conversation[]
+  accounts       Account[]
+  sessions       Session[]
+  conversations  Conversation[]
+  appPermissions UserAppPermission[] // Add this line
 }
 
 model VerificationToken {
@@ -89,4 +90,26 @@ model Message {
   deletedAt DateTime?
 
   conversation Conversation @relation(fields: [threadId], references: [threadId], onDelete: Cascade)
+}
+
+model UserAppPermission {
+  id           String    @id @default(cuid())
+  userId       String
+  appId        String
+  appName      String
+  scopes       String[]
+  accessToken  String?   @db.Text
+  refreshToken String?   @db.Text
+  expiresAt    DateTime?
+  isConnected  Boolean   @default(true)
+  connectedAt  DateTime  @default(now())
+  lastUsedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, appId])
+  @@index([userId])
+  @@index([appId])
 }
