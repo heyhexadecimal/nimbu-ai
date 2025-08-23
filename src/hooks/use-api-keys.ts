@@ -17,7 +17,6 @@ export function useAPIKeys() {
 
     checkKeys()
 
-    // Listen for storage changes
     const handleStorageChange = () => {
       checkKeys()
       setKeys(getAPIKeys())
@@ -37,7 +36,6 @@ export function useAPIKeys() {
     const valid = hasValidAPIKey()
     console.log('Has valid keys:', valid)
     
-    // Update state once
     setKeys(newKeys)
     setHasKeys(valid)
     

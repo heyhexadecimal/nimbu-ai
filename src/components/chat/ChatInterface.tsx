@@ -7,7 +7,7 @@ import { Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import MarkdownRenderer from "./markdown-renderer"
 import { useParams } from "next/navigation"
-import { keepPreviousData, useQuery } from "@tanstack/react-query"
+import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { useAPIKeys } from "@/hooks/use-api-keys"
 import { KeysManager } from "@/components/keys-manager"
@@ -76,6 +76,7 @@ export default function ChatInterface({ threadId }: { threadId?: string }) {
     const viewportRef = useRef<HTMLDivElement>(null)
     const bottomRef = useRef<HTMLDivElement>(null)
     const inputRef = useRef<HTMLTextAreaElement>(null)
+    const queryClient = useQueryClient()
 
     function scrollToBottom(behavior: ScrollBehavior = "smooth") {
         bottomRef.current?.scrollIntoView({ behavior, block: "end" })
@@ -166,6 +167,7 @@ export default function ChatInterface({ threadId }: { threadId?: string }) {
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
             let fullResponse = '';
+            let finalMessages: Message[] = [];
 
 
             while (true) {
@@ -176,9 +178,8 @@ export default function ChatInterface({ threadId }: { threadId?: string }) {
                 }
                 const chunk = decoder.decode(value);
                 fullResponse += chunk;
-                console.log(chunk);
-                setMessages((prev) => {
-                    return [
+                setMessages((prev: any) => {
+                    const updated = [
                         ...prev.slice(0, -1),
                         {
                             id: respId,
@@ -186,11 +187,14 @@ export default function ChatInterface({ threadId }: { threadId?: string }) {
                             content: fullResponse,
                             timestamp: new Date(),
                         }
-                    ]
+                    ];
+                    finalMessages = updated;
+                    return updated;
                 })
             }
 
             if (!currentThreadId) {
+                queryClient.setQueryData(['messages', threadId], finalMessages);
                 router.push(`/chat/${threadId}`)
             }
 

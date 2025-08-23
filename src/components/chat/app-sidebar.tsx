@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Mail, Calendar, Video, CheckCircle2, Loader2, X } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Mail, Calendar, Video, Loader2, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
@@ -155,26 +154,6 @@ export default function EnhancedAppsSidebar({ isOpen = true }: { isOpen?: boolea
         }
     }, [])
 
-    const getStatusBadge = (status: AppStatus) => {
-        switch (status) {
-            case 'connected':
-                return (
-                    <Badge className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20">
-                        <CheckCircle2 className="w-3 h-3 mr-1" />
-                        Connected
-                    </Badge>
-                )
-            case 'connecting':
-                return (
-                    <Badge className="bg-muted text-muted-foreground border-border">
-                        <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                        Connecting
-                    </Badge>
-                )
-            default:
-                <div></div>
-        }
-    }
 
     const formatDate = (date: Date) => {
         return new Intl.DateTimeFormat('en-US', {
@@ -192,7 +171,7 @@ export default function EnhancedAppsSidebar({ isOpen = true }: { isOpen?: boolea
     if (isLoading) {
         return (
             <div className={cn(
-                "w-80 h-screen bg-sidebar border-l border-sidebar-border transition-all duration-300 z-30"
+                "w-60 h-screen bg-sidebar border-l border-sidebar-border transition-all duration-300 z-30"
             )}>
                 <div className="flex items-center justify-center h-full">
                     <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
@@ -203,8 +182,8 @@ export default function EnhancedAppsSidebar({ isOpen = true }: { isOpen?: boolea
 
     return (
         <div className={cn(
-            "w-80 h-screen bg-sidebar border-l border-sidebar-border transition-all duration-300 z-30 flex flex-col",
-            isCollapsed ? "w-20" : "w-80"
+            " bg-sidebar h-screen  border-l border-sidebar-border transition-all duration-300 z-30 flex flex-col",
+            isCollapsed ? "w-20" : "w-60"
         )}>
             <div className="flex flex-col h-full">
 
@@ -239,7 +218,7 @@ export default function EnhancedAppsSidebar({ isOpen = true }: { isOpen?: boolea
                                 const status: AppStatus = isThisConnecting ? 'connecting' : app.status
                                 return (
                                     <Card key={app.id} className="bg-card border-border hover:shadow-md transition-shadow">
-                                        <CardHeader className="pb-3">
+                                        <CardHeader >
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-3">
                                                     <div className={cn(
@@ -254,11 +233,8 @@ export default function EnhancedAppsSidebar({ isOpen = true }: { isOpen?: boolea
                                                         <CardTitle className="text-base text-card-foreground">{app.name}</CardTitle>
                                                     </div>
                                                 </div>
-                                                {getStatusBadge(status)}
+                                             
                                             </div>
-                                            <CardDescription className="text-sm">
-                                                {app.description}
-                                            </CardDescription>
                                         </CardHeader>
 
                                         <CardContent className="pt-0">

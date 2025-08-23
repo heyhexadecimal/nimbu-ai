@@ -142,7 +142,7 @@ export class AppPermissionService {
         })
     }
 
-    generateAppOAuthUrl(appId: string, userId: string, redirectUri: string): string {
+    generateAppOAuthUrl(appId: string, userId: string, redirectUri: string, email: string): string {
         const appConfig = APP_CONFIGURATIONS[appId as keyof typeof APP_CONFIGURATIONS]
 
         if (!appConfig) {
@@ -159,7 +159,8 @@ export class AppPermissionService {
             access_type: 'offline',
             scope: appConfig.scopes,
             prompt: 'consent',
-            state: JSON.stringify({ appId, userId })
+            state: JSON.stringify({ appId, userId }),
+            login_hint: email
         })
 
         return authUrl

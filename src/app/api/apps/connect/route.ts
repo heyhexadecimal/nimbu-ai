@@ -21,7 +21,8 @@ export async function POST(req: NextRequest) {
         const authUrl = appPermissionService.generateAppOAuthUrl(
             appId,
             session.userId,
-            redirectUri
+            redirectUri,
+            session.user.email
         )
 
         return NextResponse.json({ authUrl })

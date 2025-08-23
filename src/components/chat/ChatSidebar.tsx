@@ -62,7 +62,7 @@ export function ChatSidebar({
 
 
   return (
-    <div className="w-80 h-screen bg-sidebar border-r border-sidebar-border flex flex-col">
+    <div className="w-60 h-screen bg-sidebar border-r border-sidebar-border flex flex-col">
       <div className="flex-shrink-0 p-4 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
