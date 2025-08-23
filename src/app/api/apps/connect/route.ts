@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
             appId,
             session.userId,
             redirectUri,
-            session.user.email
+            session?.user?.email as string
         )
 
         return NextResponse.json({ authUrl })
