@@ -164,7 +164,7 @@ export class ChatService {
     }
 
     private async _handleConfirmation(model: any, messages: any[], threadId: string, controller: any, encoder: TextEncoder, completeResponse: string) {
-        const result = await streamText({
+        const result = streamText({
             model,
             system: getConfirmationPrompt(this.user.name, this.user.email),
             experimental_transform: [smoothStream({ chunking: 'word' })],
@@ -237,7 +237,7 @@ export class ChatService {
             if (toolResult) {
                 const summaryResult = streamText({
                     model,
-                    system: getMarkdownSummaryPrompt({
+                    prompt: getMarkdownSummaryPrompt({
                         originalUserRequest: messages[messages.length - 1]?.content || '',
                         toolName: toolRouting.toolName,
                         toolParameters: toolRouting.parameters,
@@ -245,11 +245,7 @@ export class ChatService {
                         username: this.user.name,
                         email: this.user.email
                     }),
-                    messages: [{
-                        role: 'user',
-                        content: 'Based on the operation results, provide a comprehensive response.'
-                    }],
-                    temperature: 0.7,
+                    experimental_transform: [smoothStream({ chunking: 'word' })],
                 })
 
                 for await (const chunk of summaryResult.textStream) {

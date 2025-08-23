@@ -148,7 +148,6 @@ export default function ChatInterface({ threadId }: { threadId?: string }) {
             }
 
             const respId = crypto.randomUUID();
-            setIsLoading(false);
 
 
             setMessages((prev) => [
@@ -173,6 +172,7 @@ export default function ChatInterface({ threadId }: { threadId?: string }) {
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) {
+                    scrollToBottom("smooth")
                     console.log("Stream finished.");
                     break;
                 }
@@ -191,12 +191,16 @@ export default function ChatInterface({ threadId }: { threadId?: string }) {
                     finalMessages = updated;
                     return updated;
                 })
+                if (fullResponse?.length % 20 === 0) {
+                    scrollToBottom("smooth")
+                }
             }
 
             if (!currentThreadId) {
                 queryClient.setQueryData(['messages', threadId], finalMessages);
                 router.push(`/chat/${threadId}`)
             }
+
 
         } catch (error) {
             console.error("API call failed:", error);
@@ -244,10 +248,25 @@ export default function ChatInterface({ threadId }: { threadId?: string }) {
                                     ))}
                                     {
                                         isLoading && <div className="flex gap-4 justify-start">
-                                            <div className="bg-muted rounded-2xl px-4 py-3">
-                                                <div className="flex items-center gap-2">
-                                                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                                                    <span className="text-sm text-muted-foreground">Thinking...</span>
+                                            <div className=" rounded-2xl px-4 py-3 max-w-xs">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="flex items-center gap-1">
+                                                        <div className="flex gap-1">
+                                                            <div
+                                                                className="w-2 h-2 bg-muted-foreground/60 rounded-full animate-bounce"
+                                                                style={{ animationDelay: '0ms', animationDuration: '1.4s' }}
+                                                            />
+                                                            <div
+                                                                className="w-2 h-2 bg-muted-foreground/60 rounded-full animate-bounce"
+                                                                style={{ animationDelay: '200ms', animationDuration: '1.4s' }}
+                                                            />
+                                                            <div
+                                                                className="w-2 h-2 bg-muted-foreground/60 rounded-full animate-bounce"
+                                                                style={{ animationDelay: '400ms', animationDuration: '1.4s' }}
+                                                            />
+                                                        </div>
+                                                    </div>
+
                                                 </div>
                                             </div>
                                         </div>
