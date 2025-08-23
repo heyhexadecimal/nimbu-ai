@@ -2,16 +2,17 @@ import { getModelsForKeys } from "@/lib/models";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ChevronDown } from "lucide-react";
 
-export function ModelSelector({ model, onChange, keys }: { model: string; onChange: (m: string) => void; keys: any }) {
+export function ModelSelector({ model, onChange, keys, disabled }: { model: string; onChange: (m: string) => void; keys: any, disabled: boolean }) {
     const models = getModelsForKeys(keys)
     const currentModelName = models.find(m => m.id === model)?.name || model
 
     return (
         <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+            <DropdownMenuTrigger disabled={disabled} asChild>
                 <button
                     className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-xs hover:bg-muted"
                     aria-label="Select model"
+                    disabled={disabled}
                 >
                     <span className="truncate">{currentModelName}</span>
                     <ChevronDown className="h-3.5 w-3.5 opacity-80" />

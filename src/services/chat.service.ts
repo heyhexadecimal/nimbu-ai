@@ -8,6 +8,7 @@ import z from 'zod'
 import { prisma } from '@/lib/prisma'
 import { scheduleMeeting, getUpcomingEvents, findFreeTimeSlots, searchEvents as searchCalendarEvents, getCalendarList, createRecurringEvent, checkEventConflicts } from '@/lib/meet'
 import { getConfirmationPrompt, getMarkdownSummaryPrompt, getSystemPrompt, getToolCallPrompt } from '@/lib/prompt'
+import { AppPermissionService } from './app-permission.service'
 
 
 export const ToolRoutingSchema = z.object({
@@ -43,7 +44,6 @@ export const ToolRoutingSchema = z.object({
         meetStart: z.string().describe('Meeting start time'),
         meetEnd: z.string().describe('Meeting end time'),
         meetAttendees: z.array(z.string()).describe('Meeting attendees'),
-        // Calendar params
         title: z.string().describe('Event title (for recurring events)'),
         description: z.string().describe('Event description'),
         start: z.string().describe('Event start time (ISO 8601)'),
@@ -79,12 +79,14 @@ interface ChatFetchRequest {
 
 export class ChatService {
     private conversationService = new ConversationService()
+    private appPermissionService = new AppPermissionService()
     private user: {
         name: string,
         email: string
+        id: string
     }
 
-    constructor(user: { name: string, email: string }) {
+    constructor(user: { name: string, email: string, id: string }) {
         this.user = user
     }
 
@@ -130,7 +132,7 @@ export class ChatService {
                     } else if (toolRouting.requiresGmailAgent && !toolRouting.userConfirmAgent) {
                         await this._handleConfirmation(selectedModel, messages, threadId, controller, encoder, completeResponse)
                     } else {
-                        await this._handleGmailAgent(selectedModel, toolRouting, accessToken, threadId, controller, encoder, completeResponse, messages, request.organizer)
+                        await this._handleGmailAgent(selectedModel, toolRouting, threadId, controller, encoder, completeResponse, messages, request.organizer)
                     }
 
                 } catch (error) {
@@ -178,9 +180,7 @@ export class ChatService {
         controller.close()
     }
 
-    private async _handleGmailAgent(model: any, toolRouting: any, accessToken: string, threadId: string, controller: any, encoder: TextEncoder, completeResponse: string, messages: any[], organizer: { email: string, displayName: string }) {
-        // Send agent announcement
-        const agentResponse = this._getAgentResponse(toolRouting.toolName, toolRouting.parameters, organizer)
+    private async _handleGmailAgent(model: any, toolRouting: any, threadId: string, controller: any, encoder: TextEncoder, completeResponse: string, messages: any[], organizer: { email: string, displayName: string }) {
         const calendarToolsSet = new Set([
             'scheduleMeeting',
             'getUpcomingEvents',
@@ -190,7 +190,33 @@ export class ChatService {
             'createRecurringEvent',
             'checkEventConflicts'
         ])
-        const agentName = calendarToolsSet.has(toolRouting.toolName) ? 'Calendar' : 'Gmail'
+
+        const requiredApp = calendarToolsSet.has(toolRouting.toolName) ? 'calendar' : 'gmail'
+        const agentName = requiredApp === 'calendar' ? 'Calendar' : 'Gmail'
+
+        const hasPermission = await this.appPermissionService.hasAppPermission(this.user.id, requiredApp)
+
+        if (!hasPermission) {
+            const errorMsg = `❌ **${agentName} Not Connected**\n\nTo use ${agentName} features, please connect your ${agentName} account first.`
+            controller.enqueue(encoder.encode(errorMsg))
+            completeResponse += errorMsg
+            await this.conversationService.saveAssistantMessage(threadId, completeResponse)
+            controller.close()
+            return
+        }
+
+        const accessToken = await this.appPermissionService.getAppAccessToken(this.user.id, requiredApp)
+
+        if (!accessToken) {
+            const errorMsg = `❌ **${agentName} Authentication Error**\n\n${agentName} access token has expired. Please reconnect your account.\n\n[Go to Apps Settings](/apps) to reconnect ${agentName}.`
+            controller.enqueue(encoder.encode(errorMsg))
+            completeResponse += errorMsg
+            await this.conversationService.saveAssistantMessage(threadId, completeResponse)
+            controller.close()
+            return
+        }
+
+        const agentResponse = this._getAgentResponse(toolRouting.toolName, toolRouting.parameters, organizer)
         controller.enqueue(encoder.encode(agentResponse.initial))
         completeResponse += agentResponse.initial
         await this._delay(500)
@@ -206,10 +232,8 @@ export class ChatService {
         await this._delay(500)
 
         try {
-            //  Execute tool
             const toolResult = await this._executeGmailTool(toolRouting.toolName, toolRouting.parameters, accessToken, organizer)
 
-            //  Generate AI summary
             if (toolResult) {
                 const summaryResult = streamText({
                     model,
@@ -223,7 +247,7 @@ export class ChatService {
                     }),
                     messages: [{
                         role: 'user',
-                        content: 'Based on the Gmail operation results, provide a comprehensive response.'
+                        content: 'Based on the operation results, provide a comprehensive response.'
                     }],
                     temperature: 0.7,
                 })
@@ -263,7 +287,6 @@ export class ChatService {
                     throw new Error('Failed to schedule meeting')
                 }
 
-            // Calendar tools
             case 'getUpcomingEvents': {
                 const res = await getUpcomingEvents(accessToken, parameters.maxResults || 10, parameters.timeMin, parameters.timeMax)
                 const events = res?.events || []
@@ -432,15 +455,15 @@ export class ChatService {
         const errorMessage = error instanceof Error ? error.message : String(error)
 
         if (errorMessage.includes('401') || errorMessage.includes('unauthorized') || errorMessage.includes('invalid authentication credentials')) {
-            return 'Your Gmail session has expired. Please relogin to the platform to continue.\n\n**To fix this:** Please relogin to refresh your Gmail authentication.'
+            return 'Your app session has expired. Please reconnect the app to continue.\n\n**To fix this:** [Go to Apps Settings](/apps) to reconnect your account.'
         } else if (errorMessage.includes('quota') || errorMessage.includes('rate limit')) {
-            return 'Gmail is experiencing high demand. Please wait a moment and try again.\n\n**To fix this:** Please wait a few minutes and try again.'
+            return 'The app is experiencing high demand. Please wait a moment and try again.\n\n**To fix this:** Please wait a few minutes and try again.'
         } else if (errorMessage.includes('authentication') || errorMessage.includes('token') || errorMessage.includes('credentials')) {
-            return 'Gmail authentication issue. Please reconnect your account.\n\n**To fix this:** Go to account settings and reconnect your Gmail account.'
+            return 'App authentication issue. Please reconnect your account.\n\n**To fix this:** [Go to Apps Settings](/apps) to reconnect your account.'
         } else if (errorMessage.includes('permission') || errorMessage.includes('scope')) {
-            return 'Missing Gmail permissions. Please check your account settings.\n\n**To fix this:** Grant the necessary permissions for Gmail access.'
+            return 'Missing app permissions. Please check your account settings.\n\n**To fix this:** [Go to Apps Settings](/apps) to grant necessary permissions.'
         } else {
-            return 'Gmail operation failed. Please try again.\n\n**To fix this:** Check your connection and retry.'
+            return 'App operation failed. Please try again.\n\n**To fix this:** Check your connection and retry, or [reconnect the app](/apps).'
         }
     }
 
@@ -494,7 +517,5 @@ export class ChatService {
                 threadId,
             }
         })
-
-
     }
 }

@@ -5,9 +5,9 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import MarkdownRenderer from "./message-bubble"
+import MarkdownRenderer from "./markdown-renderer"
 import { useParams } from "next/navigation"
-import { keepPreviousData, useQuery } from "@tanstack/react-query"
+import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { useAPIKeys } from "@/hooks/use-api-keys"
 import { KeysManager } from "@/components/keys-manager"
@@ -75,7 +75,8 @@ export default function ChatInterface({ threadId }: { threadId?: string }) {
 
     const viewportRef = useRef<HTMLDivElement>(null)
     const bottomRef = useRef<HTMLDivElement>(null)
-    const inputRef = useRef<HTMLInputElement>(null)
+    const inputRef = useRef<HTMLTextAreaElement>(null)
+    const queryClient = useQueryClient()
 
     function scrollToBottom(behavior: ScrollBehavior = "smooth") {
         bottomRef.current?.scrollIntoView({ behavior, block: "end" })
@@ -166,6 +167,7 @@ export default function ChatInterface({ threadId }: { threadId?: string }) {
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
             let fullResponse = '';
+            let finalMessages: Message[] = [];
 
 
             while (true) {
@@ -176,9 +178,8 @@ export default function ChatInterface({ threadId }: { threadId?: string }) {
                 }
                 const chunk = decoder.decode(value);
                 fullResponse += chunk;
-                console.log(chunk);
-                setMessages((prev) => {
-                    return [
+                setMessages((prev: any) => {
+                    const updated = [
                         ...prev.slice(0, -1),
                         {
                             id: respId,
@@ -186,11 +187,14 @@ export default function ChatInterface({ threadId }: { threadId?: string }) {
                             content: fullResponse,
                             timestamp: new Date(),
                         }
-                    ]
+                    ];
+                    finalMessages = updated;
+                    return updated;
                 })
             }
 
             if (!currentThreadId) {
+                queryClient.setQueryData(['messages', threadId], finalMessages);
                 router.push(`/chat/${threadId}`)
             }
 
@@ -228,10 +232,10 @@ export default function ChatInterface({ threadId }: { threadId?: string }) {
                                         <div key={m.id} className={cn("flex", m.role === "user" ? "justify-end" : "justify-start")}>
                                             <div
                                                 className={cn(
-                                                    "max-w-[85%] prose prose-sm prose-neutral dark:prose-invert rounded-2xl px-4 py-3 text-sm leading-relaxed ",
+                                                    " prose prose-sm prose-neutral rounded-2xl px-4 py-3 text-sm leading-relaxed prose-a:text-primary-foreground  hover:prose-a:underline",
                                                     m.role === "user"
-                                                        ? "bg-primary text-primary-foreground shadow-primary/20"
-                                                        : "",
+                                                        ? "bg-primary max-w-[70%] text-primary-foreground shadow-primary/20"
+                                                        : "prose-invert max-w-[85%] prose-a:text-primary",
                                                 )}
                                             >
                                                 <MarkdownRenderer content={m.content} />
@@ -298,6 +302,7 @@ export default function ChatInterface({ threadId }: { threadId?: string }) {
                 <Composer
                     input={input}
                     inputRef={inputRef}
+                    isLoading={isLoading}
                     isMessageLimitReached={isMessageLimitReached}
                     setInput={setInput}
                     handleSubmit={handleSubmit}
@@ -309,7 +314,7 @@ export default function ChatInterface({ threadId }: { threadId?: string }) {
                     userMessageCount={userMessageCount}
                 />
             </div>
-        </div>
+        </div >
     )
 }
 

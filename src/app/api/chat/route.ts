@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     const apiKey = req.headers.get("x-model-api-key") as string
 
     const conversationService = new ConversationService()
-    const chatService = new ChatService({ name: session?.user?.name as string, email: session?.user?.email })
+    const chatService = new ChatService({ name: session?.user?.name as string, email: session?.user?.email, id: session?.userId as string })
 
     try {
       await conversationService.ensureConversation(threadId, session.userId as string, messages, model, apiKey)
