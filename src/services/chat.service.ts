@@ -11,10 +11,27 @@ import { getConfirmationPrompt, getMarkdownSummaryPrompt, getSystemPrompt, getTo
 import { AppPermissionService } from './app-permission.service'
 
 
+// Add these imports to your existing chat.service.ts
+import {
+    searchDocuments,
+    getDocumentContent,
+    createDocument,
+    updateDocumentContent,
+    getDocumentPermissions,
+    addDocumentPermission,
+    removeDocumentPermission,
+    updateDocumentTitle,
+    getRecentDocuments,
+    type DocSearchResult,
+    type DocContent
+} from '@/lib/docs'
+
+// Update the ToolRoutingSchema to include Google Docs tools
 export const ToolRoutingSchema = z.object({
-    requiresGmailAgent: z.boolean().describe('Whether this request requires google apps (gmail,calendar or meet) functionality'),
+    requiresGmailAgent: z.boolean().describe('Whether this request requires google apps (gmail,calendar,meet,docs) functionality'),
     userConfirmAgent: z.boolean().describe('Whether the user has confirmed the agent'),
     toolName: z.enum([
+        // Existing tools
         'sendEmail',
         'readRecentEmails',
         'searchEmails',
@@ -27,9 +44,20 @@ export const ToolRoutingSchema = z.object({
         'getCalendarList',
         'createRecurringEvent',
         'checkEventConflicts',
+        // NEW: Google Docs tools
+        'searchDocuments',
+        'getDocumentContent',
+        'createDocument',
+        'updateDocumentContent',
+        'getDocumentPermissions',
+        'addDocumentPermission',
+        'removeDocumentPermission',
+        'updateDocumentTitle',
+        'getRecentDocuments',
         'none'
-    ]).describe('The specific Gmail/Calendar tool to use'),
+    ]).describe('The specific Gmail/Calendar/Docs tool to use'),
     parameters: z.object({
+        // Existing parameters...
         to: z.string().describe('Recipient email address'),
         subject: z.string().describe('Email subject line'),
         body: z.string().describe('Email content in markdown format'),
@@ -55,10 +83,24 @@ export const ToolRoutingSchema = z.object({
         durationMinutes: z.number().describe('Desired free slot duration in minutes'),
         attendees: z.array(z.string()).describe('Attendees for free/busy or event operations'),
         recurrence: z.array(z.string()).describe('Recurrence rules array'),
-        excludeEventId: z.string().describe('Event ID to exclude from conflict check')
+        excludeEventId: z.string().describe('Event ID to exclude from conflict check'),
+
+        // NEW: Google Docs parameters
+        documentTitle: z.string().describe('Document title to search for or create'),
+        documentId: z.string().describe('Google Docs document ID'),
+        content: z.string().describe('Content to add to document'),
+        insertAtEnd: z.boolean().describe('Whether to insert content at end of document (true) or beginning (false)'),
+        permissionType: z.enum(['user', 'group', 'domain', 'anyone']).describe('Type of permission to add'),
+        permissionRole: z.enum(['owner', 'organizer', 'fileOrganizer', 'writer', 'commenter', 'reader']).describe('Permission role'),
+        permissionEmail: z.string().describe('Email address for user/group permissions'),
+        permissionDomain: z.string().describe('Domain for domain permissions'),
+        permissionId: z.string().describe('Permission ID to remove'),
+        sendNotificationEmail: z.boolean().describe('Whether to send notification email when adding permissions'),
+        newTitle: z.string().describe('New title for document')
     }),
     reasoning: z.string().describe('Explanation of tool selection and parameter extraction')
 })
+
 
 interface ChatRequest {
     messages: any[]
@@ -191,8 +233,28 @@ export class ChatService {
             'checkEventConflicts'
         ])
 
-        const requiredApp = calendarToolsSet.has(toolRouting.toolName) ? 'calendar' : 'gmail'
-        const agentName = requiredApp === 'calendar' ? 'Calendar' : 'Gmail'
+        const docsToolsSet = new Set([
+            'searchDocuments',
+            'getDocumentContent',
+            'createDocument',
+            'updateDocumentContent',
+            'getDocumentPermissions',
+            'addDocumentPermission',
+            'removeDocumentPermission',
+            'updateDocumentTitle',
+            'getRecentDocuments'
+        ])
+
+
+        let requiredApp = 'gmail' // default
+        if (calendarToolsSet.has(toolRouting.toolName)) {
+            requiredApp = 'calendar'
+        } else if (docsToolsSet.has(toolRouting.toolName)) {
+            requiredApp = 'docs'
+        }
+
+        const agentName = requiredApp === 'calendar' ? 'Calendar' :
+            requiredApp === 'docs' ? 'Docs' : 'Gmail'
 
         const hasPermission = await this.appPermissionService.hasAppPermission(this.user.id, requiredApp)
 
@@ -377,6 +439,188 @@ export class ChatService {
 
                 return `Search results for "${searchQuery}" - ${searchResults.length} email(s) found:\n\n${results}`
 
+            case 'searchDocuments': {
+                if (!parameters.searchQuery && !parameters.documentTitle) {
+                    throw new Error('No search query or document title provided')
+                }
+                const query = parameters.searchQuery || parameters.documentTitle
+                const results = await searchDocuments(accessToken, query, parameters.maxResults || 20)
+
+                if (results.length === 0) {
+                    return `No documents found for "${query}".`
+                }
+
+                const list = results.slice(0, 10).map((doc: DocSearchResult, i: number) =>
+                    `${i + 1}. "${doc.name}" - Modified: ${new Date(doc.modifiedTime).toLocaleDateString()}`
+                ).join('\n')
+
+                return `📄 Found ${results.length} document(s) for "${query}":\n${list}`
+            }
+
+            case 'getDocumentContent': {
+                if (!parameters.documentId) {
+                    // If no ID provided, try to search by title first
+                    if (parameters.documentTitle) {
+                        const searchResults = await searchDocuments(accessToken, parameters.documentTitle, 5)
+                        if (searchResults.length === 0) {
+                            throw new Error(`No document found with title "${parameters.documentTitle}"`)
+                        }
+                        parameters.documentId = searchResults[0].id
+                    } else {
+                        throw new Error('No document ID or title provided')
+                    }
+                }
+
+                const docContent = await getDocumentContent(accessToken, parameters.documentId)
+                const preview = docContent.content.slice(0, 500) + (docContent.content.length > 500 ? '...' : '')
+
+                return `📖 Document: "${docContent.title}"\nWord Count: ${docContent.wordCount}\nContent Preview:\n${preview}`
+            }
+
+            case 'createDocument': {
+                if (!parameters.documentTitle && !parameters.title) {
+                    throw new Error('No document title provided')
+                }
+
+                const title = parameters.documentTitle || parameters.title
+                const result = await createDocument(accessToken, title, parameters.content)
+
+                return `✅ Document created successfully!\nTitle: "${title}"\nDocument ID: ${result.documentId}\nLink: ${result.webViewLink}`
+            }
+
+            case 'updateDocumentContent': {
+                if (!parameters.documentId) {
+                    // Try to find document by title
+                    if (parameters.documentTitle) {
+                        const searchResults = await searchDocuments(accessToken, parameters.documentTitle, 5)
+                        if (searchResults.length === 0) {
+                            throw new Error(`No document found with title "${parameters.documentTitle}"`)
+                        }
+                        parameters.documentId = searchResults[0].id
+                    } else {
+                        throw new Error('No document ID or title provided')
+                    }
+                }
+
+                if (!parameters.content) {
+                    throw new Error('No content provided to add to document')
+                }
+
+                await updateDocumentContent(accessToken, parameters.documentId, parameters.content, parameters.insertAtEnd !== false)
+
+                return `✅ Document updated successfully!\nContent added to document.`
+            }
+
+            case 'getDocumentPermissions': {
+                if (!parameters.documentId) {
+                    // Try to find document by title
+                    if (parameters.documentTitle) {
+                        const searchResults = await searchDocuments(accessToken, parameters.documentTitle, 5)
+                        if (searchResults.length === 0) {
+                            throw new Error(`No document found with title "${parameters.documentTitle}"`)
+                        }
+                        parameters.documentId = searchResults[0].id
+                    } else {
+                        throw new Error('No document ID or title provided')
+                    }
+                }
+
+                const permissions = await getDocumentPermissions(accessToken, parameters.documentId)
+
+                if (permissions.length === 0) {
+                    return 'No permissions found for this document.'
+                }
+
+                const permissionList = permissions.map((perm, i) =>
+                    `${i + 1}. ${perm.type} - ${perm.role}${perm.emailAddress ? ` (${perm.emailAddress})` : ''}`
+                ).join('\n')
+
+                return `🔐 Document Permissions (${permissions.length}):\n${permissionList}`
+            }
+
+            case 'addDocumentPermission': {
+                if (!parameters.documentId) {
+                    // Try to find document by title
+                    if (parameters.documentTitle) {
+                        const searchResults = await searchDocuments(accessToken, parameters.documentTitle, 5)
+                        if (searchResults.length === 0) {
+                            throw new Error(`No document found with title "${parameters.documentTitle}"`)
+                        }
+                        parameters.documentId = searchResults[0].id
+                    } else {
+                        throw new Error('No document ID or title provided')
+                    }
+                }
+
+                if (!parameters.permissionType || !parameters.permissionRole) {
+                    throw new Error('Permission type and role are required')
+                }
+
+                const permission = {
+                    type: parameters.permissionType,
+                    role: parameters.permissionRole,
+                    emailAddress: parameters.permissionEmail,
+                    domain: parameters.permissionDomain
+                }
+
+                const result = await addDocumentPermission(
+                    accessToken,
+                    parameters.documentId,
+                    permission,
+                    parameters.sendNotificationEmail !== false
+                )
+
+                return `✅ Permission added successfully!\nPermission ID: ${result.permissionId}\nType: ${permission.type}\nRole: ${permission.role}`
+            }
+
+            case 'removeDocumentPermission': {
+                if (!parameters.documentId || !parameters.permissionId) {
+                    throw new Error('Document ID and permission ID are required')
+                }
+
+                await removeDocumentPermission(accessToken, parameters.documentId, parameters.permissionId)
+
+                return `✅ Permission removed successfully!`
+            }
+
+            case 'updateDocumentTitle': {
+                if (!parameters.documentId) {
+                    // Try to find document by title
+                    if (parameters.documentTitle) {
+                        const searchResults = await searchDocuments(accessToken, parameters.documentTitle, 5)
+                        if (searchResults.length === 0) {
+                            throw new Error(`No document found with title "${parameters.documentTitle}"`)
+                        }
+                        parameters.documentId = searchResults[0].id
+                    } else {
+                        throw new Error('No document ID or title provided')
+                    }
+                }
+
+                if (!parameters.newTitle) {
+                    throw new Error('New title is required')
+                }
+
+                await updateDocumentTitle(accessToken, parameters.documentId, parameters.newTitle)
+
+                return `✅ Document title updated successfully!\nNew title: "${parameters.newTitle}"`
+            }
+
+            case 'getRecentDocuments': {
+                const documents = await getRecentDocuments(accessToken, parameters.maxResults || 10)
+
+                if (documents.length === 0) {
+                    return 'No recent documents found.'
+                }
+
+                const docList = documents.map((doc: DocSearchResult, i: number) =>
+                    `${i + 1}. "${doc.name}" - Modified: ${new Date(doc.modifiedTime).toLocaleDateString()}`
+                ).join('\n')
+
+                return `📄 Recent Documents (${documents.length}):\n${docList}`
+            }
+
+
             case 'markAsRead':
                 return 'Mark as read functionality would be implemented here'
 
@@ -438,6 +682,52 @@ export class ChatService {
                 return {
                     initial: `I'll check for scheduling conflicts. Adding the Calendar agent now.`,
                     action: `Checking your calendar for conflicts...`
+                }
+            // NEW: Google Docs cases
+            case 'searchDocuments':
+                return {
+                    initial: `I'll search for documents${parameters.searchQuery || parameters.documentTitle ? ` about "${parameters.searchQuery || parameters.documentTitle}"` : ''}. Adding the Docs agent now.`,
+                    action: `Searching through your Google Docs...`
+                }
+            case 'getDocumentContent':
+                return {
+                    initial: `I'll read the document content${parameters.documentTitle ? ` for "${parameters.documentTitle}"` : ''}. Adding the Docs agent now.`,
+                    action: `Retrieving document content...`
+                }
+            case 'createDocument':
+                return {
+                    initial: `I'll create a new document${parameters.documentTitle || parameters.title ? ` titled "${parameters.documentTitle || parameters.title}"` : ''}. Adding the Docs agent now.`,
+                    action: `Creating the document...`
+                }
+            case 'updateDocumentContent':
+                return {
+                    initial: `I'll update the document${parameters.documentTitle ? ` "${parameters.documentTitle}"` : ''} with new content. Adding the Docs agent now.`,
+                    action: `Adding content to the document...`
+                }
+            case 'getDocumentPermissions':
+                return {
+                    initial: `I'll check the permissions for the document${parameters.documentTitle ? ` "${parameters.documentTitle}"` : ''}. Adding the Docs agent now.`,
+                    action: `Retrieving document permissions...`
+                }
+            case 'addDocumentPermission':
+                return {
+                    initial: `I'll add permissions to the document${parameters.documentTitle ? ` "${parameters.documentTitle}"` : ''}. Adding the Docs agent now.`,
+                    action: `Adding document permission...`
+                }
+            case 'removeDocumentPermission':
+                return {
+                    initial: `I'll remove permissions from the document. Adding the Docs agent now.`,
+                    action: `Removing document permission...`
+                }
+            case 'updateDocumentTitle':
+                return {
+                    initial: `I'll rename the document${parameters.newTitle ? ` to "${parameters.newTitle}"` : ''}. Adding the Docs agent now.`,
+                    action: `Updating document title...`
+                }
+            case 'getRecentDocuments':
+                return {
+                    initial: `I'll get your recent documents. Adding the Docs agent now.`,
+                    action: `Retrieving recent documents...`
                 }
             default:
                 return {
