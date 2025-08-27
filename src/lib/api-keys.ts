@@ -5,18 +5,13 @@ export interface APIKeys {
   gemini?: {
     key: string
   }
-  // To add new providers in the future:
-  // 1. Add the provider interface here
-  // 2. Add the provider to the models configuration in models.ts
-  // 3. Update the API keys modal to handle the new provider
-  // 4. The ChatInterface will automatically work with the new provider
 }
 
-const API_KEYS_STORAGE_KEY = 'tinda-ai-api-keys'
+const API_KEYS_STORAGE_KEY = 'nimbu-ai-api-keyss'
 
 export function getAPIKeys(): APIKeys {
   if (typeof window === 'undefined') return {}
-  
+
   try {
     const stored = localStorage.getItem(API_KEYS_STORAGE_KEY)
     return stored ? JSON.parse(stored) : {}
@@ -28,7 +23,7 @@ export function getAPIKeys(): APIKeys {
 
 export function setAPIKeys(keys: APIKeys): void {
   if (typeof window === 'undefined') return
-  
+
   try {
     localStorage.setItem(API_KEYS_STORAGE_KEY, JSON.stringify(keys))
   } catch (error) {

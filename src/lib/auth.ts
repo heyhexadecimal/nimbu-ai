@@ -20,10 +20,13 @@ export const APP_CONFIGURATIONS = {
       'https://www.googleapis.com/auth/calendar.readonly'
     ]
   },
-  meet: {
-    name: 'Google Meet',
+  docs: {
+    name: 'Google Docs',
     scopes: [
-      'https://www.googleapis.com/auth/calendar.events'
+      'https://www.googleapis.com/auth/documents',
+      'https://www.googleapis.com/auth/drive.file',
+      'https://www.googleapis.com/auth/drive.readonly',
+      'https://www.googleapis.com/auth/drive.metadata.readonly'
     ]
   }
 }

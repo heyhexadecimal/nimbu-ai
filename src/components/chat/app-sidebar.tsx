@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Mail, Calendar, Video, Loader2, X } from "lucide-react"
+import { Mail, Calendar, Video, Loader2, X, FileText } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
@@ -31,7 +31,8 @@ export default function EnhancedAppsSidebar({ isOpen = true }: { isOpen?: boolea
     const appIcons = {
         gmail: <Mail className="w-5 h-5" />,
         calendar: <Calendar className="w-5 h-5" />,
-        meet: <Video className="w-5 h-5" />
+        meet: <Video className="w-5 h-5" />,
+        docs: <FileText className="w-5 h-5" />
     }
 
     const appDescriptions = {
@@ -43,7 +44,8 @@ export default function EnhancedAppsSidebar({ isOpen = true }: { isOpen?: boolea
     const appPermissions = {
         gmail: ['Read emails', 'Send emails', 'Manage inbox'],
         calendar: ['Read events', 'Create events', 'Send invitations'],
-        meet: ['Create meetings', 'Cancel meetings', 'Schedule Meetings']
+        meet: ['Create meetings', 'Cancel meetings', 'Schedule Meetings'],
+        docs: ['Read, create, edit, and manage documents', 'Access document content and formatting', 'Share and collaborate on documents']
     }
 
     const { data: apps = [], isLoading } = useQuery<GoogleApp[]>({
