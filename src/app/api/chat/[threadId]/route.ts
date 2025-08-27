@@ -16,10 +16,10 @@ export async function GET(
 
     const { threadId } = await params;
 
-    const chatService = new ChatService({ name: session?.user?.name as string, email: session?.user?.email as string })
+    const chatService = new ChatService({ name: session?.user?.name as string, email: session?.user?.email as string, id: session.userId as string })
 
     try {
-        const messages = await chatService.fetchChatMessages({
+        const messages = await chatService.getMessages({
             threadId,
             userId: session.userId as string,
         })
