@@ -4,8 +4,6 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter"
 import { prisma } from "@/lib/prisma"
 import { google } from "googleapis"
 
-// Add this to your existing auth.ts file
-
 export const APP_CONFIGURATIONS = {
   gmail: {
     name: 'Gmail',
@@ -22,20 +20,13 @@ export const APP_CONFIGURATIONS = {
       'https://www.googleapis.com/auth/calendar.readonly'
     ]
   },
-  meet: {
-    name: 'Google Meet',
-    scopes: [
-      'https://www.googleapis.com/auth/calendar.events'
-    ]
-  },
-  // NEW: Google Docs configuration
   docs: {
     name: 'Google Docs',
     scopes: [
-      'https://www.googleapis.com/auth/documents',      // Read and write Google Docs
-      'https://www.googleapis.com/auth/drive.file',     // Access files created by the app
-      'https://www.googleapis.com/auth/drive.readonly', // Read access to Google Drive files
-      'https://www.googleapis.com/auth/drive.metadata.readonly' // Read Drive file metadata
+      'https://www.googleapis.com/auth/documents',
+      'https://www.googleapis.com/auth/drive.file',
+      'https://www.googleapis.com/auth/drive.readonly',
+      'https://www.googleapis.com/auth/drive.metadata.readonly'
     ]
   }
 }

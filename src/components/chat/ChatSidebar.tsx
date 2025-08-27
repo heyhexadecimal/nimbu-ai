@@ -121,9 +121,7 @@ export function ChatSidebar({
                         <p className="text-xs text-muted-foreground">
                           {conversation.messagesCount} messages
                         </p>
-                        <span className="text-xs text-muted-foreground">
-                          •
-                        </span>
+
                         <p className="text-xs text-muted-foreground">
                           {format(conversation.createdAt)}
                         </p>
