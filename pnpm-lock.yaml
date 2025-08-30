@@ -32,6 +32,9 @@ importers:
       '@langchain/openai':
         specifier: ^0.6.9
         version: 0.6.9(@langchain/core@0.3.72(@opentelemetry/api@1.9.0)(openai@5.15.0(ws@8.18.3)(zod@4.0.14)))(ws@8.18.3)
+      '@langchain/tavily':
+        specifier: ^0.1.5
+        version: 0.1.5(@langchain/core@0.3.72(@opentelemetry/api@1.9.0)(openai@5.15.0(ws@8.18.3)(zod@4.0.14)))
       '@nanostores/react':
         specifier: git+https://github.com/ai/react.git
         version: git+https://github.com/ai/react.git#a6ad745cc307881916944ee4d6ba04bdda978dc6(nanostores@1.0.1)(react@19.1.0)
@@ -850,6 +853,12 @@ packages:
     engines: {node: '>=18'}
     peerDependencies:
       '@langchain/core': '>=0.3.68 <0.4.0'
+
+  '@langchain/tavily@0.1.5':
+    resolution: {integrity: sha512-6C8hb3d6YjlGJPdPFfaNlrUS0h6blQx4cRzCKeDdCvixcghzV8llAmuzvJSmAyALprFfvKtj+1NJb4ttj1iZ/A==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      '@langchain/core': '>=0.3.58 <0.4.0'
 
   '@langchain/textsplitters@0.1.0':
     resolution: {integrity: sha512-djI4uw9rlkAb5iMhtLED+xJebDdAG935AdP4eRTB02R7OB/act55Bj9wsskhZsvuyQRpO4O1wQOp85s6T6GWmw==}
@@ -3628,6 +3637,11 @@ snapshots:
     transitivePeerDependencies:
       - ws
 
+  '@langchain/tavily@0.1.5(@langchain/core@0.3.72(@opentelemetry/api@1.9.0)(openai@5.15.0(ws@8.18.3)(zod@4.0.14)))':
+    dependencies:
+      '@langchain/core': 0.3.72(@opentelemetry/api@1.9.0)(openai@5.15.0(ws@8.18.3)(zod@4.0.14))
+      zod: 3.25.76
+
   '@langchain/textsplitters@0.1.0(@langchain/core@0.3.72(@opentelemetry/api@1.9.0)(openai@5.15.0(ws@8.18.3)(zod@4.0.14)))':
     dependencies:
       '@langchain/core': 0.3.72(@opentelemetry/api@1.9.0)(openai@5.15.0(ws@8.18.3)(zod@4.0.14))
@@ -4812,7 +4826,7 @@ snapshots:
       isstream: 0.1.2
       jsonwebtoken: 9.0.2
       mime-types: 2.1.35
-      retry-axios: 2.6.0(axios@1.11.0(debug@4.4.1))
+      retry-axios: 2.6.0(axios@1.11.0)
       tough-cookie: 4.1.4
     transitivePeerDependencies:
       - supports-color
@@ -5852,7 +5866,7 @@ snapshots:
 
   requires-port@1.0.0: {}
 
-  retry-axios@2.6.0(axios@1.11.0(debug@4.4.1)):
+  retry-axios@2.6.0(axios@1.11.0):
     dependencies:
       axios: 1.11.0(debug@4.4.1)
 
