@@ -12,6 +12,7 @@ export async function POST(req: NextRequest) {
       return new Response('Unauthorized', { status: 401 })
     }
 
+
     const { messages, threadId, model } = await req.json()
     if (!Array.isArray(messages)) {
       return new Response('Invalid message format', { status: 400 })
@@ -38,12 +39,7 @@ export async function POST(req: NextRequest) {
       messages,
       threadId,
       model,
-      apiKey,
-      accessToken: session.accessToken as string,
-      organizer: {
-        email: session.user.email as string,
-        displayName: session.user.name as string
-      }
+      apiKey
     })
 
     return new Response(stream, {

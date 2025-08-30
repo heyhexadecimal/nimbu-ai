@@ -7,7 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// NextAuth required models
 model Account {
   id                String  @id @default(cuid())
   userId            String
@@ -112,4 +111,18 @@ model UserAppPermission {
   @@unique([userId, appId])
   @@index([userId])
   @@index([appId])
+}
+
+enum Status {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Waitlist {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  status    Status   @default(PENDING)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

@@ -10,6 +10,7 @@ export async function GET(req: NextRequest) {
     return new Response('Unauthorized', { status: 401 })
   }
 
+
   const conversationService = new ConversationService()
   const q = req.nextUrl.searchParams.get('q') ?? undefined
 
