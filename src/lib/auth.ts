@@ -78,17 +78,31 @@ export const authOptions: NextAuthOptions = {
     })
   ],
   callbacks: {
+    async signIn({ user, account, profile }) {
+      if (user?.email) {
+        const waitlistEntry = await prisma.waitlist.findUnique({
+          where: { email: user.email }
+        })
+        if (waitlistEntry?.status !== 'APPROVED') {
+          throw new Error('WaitlistRequired')
+        }
+      }
+      return true
+    },
     async jwt({ token, account, trigger, user }) {
       if (account) {
         token.accessToken = account.access_token
         token.refreshToken = account.refresh_token
         token.expiresAt = account.expires_at
         token.userId = user?.id
-        return token
-      }
 
-      if (!token.userId && user?.id) {
-        token.userId = user.id
+        if (user?.email) {
+          const waitlistEntry = await prisma.waitlist.findUnique({
+            where: { email: user.email }
+          })
+          token.waitlistStatus = waitlistEntry?.status || null
+        }
+
       }
 
       if (token.expiresAt && typeof token.expiresAt === 'number' && Date.now() > token.expiresAt - 60000) {
@@ -114,11 +128,21 @@ export const authOptions: NextAuthOptions = {
       session.refreshToken = token.refreshToken as string
       session.expiresAt = token.expiresAt as number
       session.userId = token.userId as string
+      session.waitlistStatus = token.waitlistStatus as 'APPROVED' | 'PENDING' | 'REJECTED' | null
       return session
+    }
+  },
+  events: {
+    async signIn({ user,  isNewUser }) {
+      console.log(`User signed in: ${user.email} (New: ${isNewUser})`)
+    },
+    async signOut() {
+      console.log('User signed out')
     }
   },
   pages: {
     signIn: '/auth/signin',
+    error: '/auth/error',
   },
   session: {
     strategy: "jwt"

@@ -4,7 +4,6 @@ import { useSession } from "next-auth/react"
 import { useRouter, useParams } from "next/navigation"
 import { useEffect, useState } from "react"
 import { ChatSidebar } from "@/components/chat/ChatSidebar"
-import { cn } from "@/lib/utils"
 import ChatInterface from "@/components/chat/ChatInterface"
 import { Button } from "@/components/ui/button"
 import {
@@ -19,15 +18,13 @@ export default function Layout() {
     const { data: session, status } = useSession()
     const router = useRouter()
     const params = useParams()
-    const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null)
     const [sidebarOpen, setSidebarOpen] = useState(true)
-    const [isMobile, setIsMobile] = useState(false)
 
     useEffect(() => {
         if (status === "unauthenticated") {
             router.push("/auth/signin")
         }
-    }, [status, router])
+    }, [status, session, router])
 
 
 
@@ -41,7 +38,7 @@ export default function Layout() {
     return (
         <div className="h-screen relative flex bg-sidebar overflow-hidden">
             <AnimatePresence initial={false}>
-                {(sidebarOpen || true) && ( // keep sidebar mounted for animation
+                {(sidebarOpen || true) && ( 
                     <motion.div
                         key="sidebar"
                         initial={{ width: 0, opacity: 0 }}
