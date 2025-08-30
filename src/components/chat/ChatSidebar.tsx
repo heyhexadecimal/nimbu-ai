@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils"
 import { useParams, useRouter } from "next/navigation"
 import { keepPreviousData, useQuery } from "@tanstack/react-query"
 import { useDebounce } from "@/hooks/use-debounce"
+import Image from "next/image"
 
 interface Conversation {
   threadId: string
@@ -74,6 +75,7 @@ export function ChatSidebar({
             >
               <Menu className="h-4 w-4" />
             </Button>
+            <Image src="/logo.png" alt="Nimbu AI" width={32} height={32} />
             <span className="text-lg font-semibold text-foreground">Nimbu AI</span>
           </div>
         </div>

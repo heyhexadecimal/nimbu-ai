@@ -64,6 +64,47 @@ export class ChatService {
         }).filter(Boolean) as BaseMessage[];
     }
 
+    private async getToolsAndAccessConfig() {
+        const gmailAccessToken = await this.appPermissionService.getAppAccessToken(this.user.id, 'gmail')
+        const calendarAccessToken = await this.appPermissionService.getAppAccessToken(this.user.id, 'calendar')
+
+        const tokenData = {
+            credentials: {
+                accessToken: gmailAccessToken as string
+            },
+        }
+
+        const tools: StructuredTool[] = []
+
+        if (gmailAccessToken) {
+            tools.push(
+                new GmailCreateDraft(tokenData),
+                new GmailGetMessage(tokenData),
+                new GmailGetThread(tokenData),
+                new GmailSearch(tokenData),
+                new GmailSendMessage(tokenData)
+            )
+        }
+
+        if (calendarAccessToken) {
+            tools.push(
+                new GoogleCalendarCreateEvent(calendarAccessToken as string),
+                new GoogleCalendarGetEvents(calendarAccessToken as string),
+                new GoogleCalendarUpdateEvent(calendarAccessToken as string),
+                new GoogleCalendarDeleteEvent(calendarAccessToken as string)
+            )
+        }
+
+        const accessConfig = {
+            gmail: gmailAccessToken ? true : false,
+            calendar: calendarAccessToken ? true : false
+        }
+
+        return { tools, accessConfig };
+
+
+    }
+
 
     async processChat(request: ChatRequest): Promise<ReadableStream> {
         const { messages, threadId, model, apiKey } = request
@@ -82,26 +123,7 @@ export class ChatService {
 
         const llm = model.includes('gemini') ? gemini : openai;
 
-        const gmailAccessToken = await this.appPermissionService.getAppAccessToken(this.user.id, 'gmail')
-        const calendarAccessToken = await this.appPermissionService.getAppAccessToken(this.user.id, 'calendar')
-
-        const tokenData = {
-            credentials: {
-                accessToken: gmailAccessToken as string
-            },
-        }
-
-        const tools: StructuredTool[] = [
-            new GmailCreateDraft(tokenData),
-            new GmailGetMessage(tokenData),
-            new GmailGetThread(tokenData),
-            new GmailSearch(tokenData),
-            new GmailSendMessage(tokenData),
-            new GoogleCalendarCreateEvent(calendarAccessToken as string),
-            new GoogleCalendarGetEvents(calendarAccessToken as string),
-            new GoogleCalendarUpdateEvent(calendarAccessToken as string),
-            new GoogleCalendarDeleteEvent(calendarAccessToken as string)
-        ];
+        const { tools, accessConfig } = await this.getToolsAndAccessConfig();
 
         const user = this.user
 
@@ -112,7 +134,7 @@ export class ChatService {
             const result = await llmWithTools.invoke([
                 {
                     role: "system",
-                    content: getSystemPrompt(user.name, user.email),
+                    content: getSystemPrompt(user.name, user.email, accessConfig),
                 },
                 ...state.messages,
             ]);

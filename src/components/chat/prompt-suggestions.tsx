@@ -1,6 +1,6 @@
 import React from 'react';
 import { Mail, Calendar, Users, Send } from 'lucide-react';
-
+import Image from 'next/image';
 const PromptSuggestions = ({ onSuggestionClick }: { onSuggestionClick: (content: string) => void }) => {
 
     const SUGGESTIONS = [
@@ -23,7 +23,11 @@ const PromptSuggestions = ({ onSuggestionClick }: { onSuggestionClick: (content:
     ];
 
     return (
-        <div className="w-full">
+        <div className="w-full  flex flex-col items-center justify-center gap-4 mb-40">
+            <div className='w-full flex items-center justify-center flex-col' >
+                <Image src="/logo.png" alt="Nimbu AI" width={200} height={200} />
+                <div className="text-muted-foreground text-sm">You can ask Nimbu to do anything you want</div>
+            </div>
             <div className="grid w-full grid-cols-2 gap-3">
                 {SUGGESTIONS?.map((suggestion, index) => {
                     const IconComponent = suggestion.icon;

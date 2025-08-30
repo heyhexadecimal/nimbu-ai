@@ -230,7 +230,9 @@ export default function ChatInterface({ threadId }: { threadId?: string }) {
                 >
                     {
                         messages?.length === 0
-                            ? <PromptSuggestions onSuggestionClick={handleSubmit} /> : (
+                            ? <div className="  h-screen flex items-center " >
+                                <PromptSuggestions onSuggestionClick={handleSubmit} />
+                            </div> : (
                                 <div className="mt-2 space-y-6">
                                     {messages.map((m) => (
                                         <div key={m.id} className={cn("flex", m.role === "user" ? "justify-end" : "justify-start")}>
