@@ -12,6 +12,7 @@ import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { ChatOpenAI } from "@langchain/openai";
 import { StateGraph } from "@langchain/langgraph";
 import { StructuredTool } from '@langchain/core/tools'
+import { TavilySearch } from "@langchain/tavily";
 import {
     GmailCreateDraft,
     GmailGetMessage,
@@ -21,6 +22,7 @@ import {
 } from "@langchain/community/tools/gmail";
 
 import { GoogleCalendarCreateEvent, GoogleCalendarGetEvents, GoogleCalendarUpdateEvent, GoogleCalendarDeleteEvent } from '@/lib/calendar'
+import { GoogleDocsCreateDocument, GoogleDocsReadDocument, GoogleDocsUpdateDocument, GoogleDocsFormatDocument, GoogleDocsSearchDocuments, GoogleDocsShareDocument, GoogleDocsDeleteDocument } from '@/lib/docs'
 
 interface ChatRequest {
     messages: any[]
@@ -56,7 +58,6 @@ export class ChatService {
                 case 'assistant':
                     return new AIMessage(msg.content);
                 case 'system':
-                    // System messages are handled separately in the llmCall function
                     return null;
                 default:
                     throw new Error(`Unsupported message role: ${msg.role}`);
@@ -65,8 +66,9 @@ export class ChatService {
     }
 
     private async getToolsAndAccessConfig() {
-        const gmailAccessToken = await this.appPermissionService.getAppAccessToken(this.user.id, 'gmail')
-        const calendarAccessToken = await this.appPermissionService.getAppAccessToken(this.user.id, 'calendar')
+        const gmailAccessToken = await this.appPermissionService.getAppAccessToken(this.user.id, 'gmail');
+        const calendarAccessToken = await this.appPermissionService.getAppAccessToken(this.user.id, 'calendar');
+        const docsAccessToken = await this.appPermissionService.getAppAccessToken(this.user.id, 'docs');
 
         const tokenData = {
             credentials: {
@@ -74,7 +76,12 @@ export class ChatService {
             },
         }
 
-        const tools: StructuredTool[] = []
+        const tools: StructuredTool[] = [
+            new TavilySearch({
+                maxResults: 5,
+                topic: "general"
+            })
+        ]
 
         if (gmailAccessToken) {
             tools.push(
@@ -95,9 +102,21 @@ export class ChatService {
             )
         }
 
+        if (docsAccessToken) {
+            tools.push(
+                new GoogleDocsCreateDocument(docsAccessToken as string),
+                new GoogleDocsReadDocument(docsAccessToken as string),
+                new GoogleDocsUpdateDocument(docsAccessToken as string),
+                new GoogleDocsFormatDocument(docsAccessToken as string),
+                new GoogleDocsSearchDocuments(docsAccessToken as string),
+                new GoogleDocsShareDocument(docsAccessToken as string),
+                new GoogleDocsDeleteDocument(docsAccessToken as string)
+            )
+        }
         const accessConfig = {
             gmail: gmailAccessToken ? true : false,
-            calendar: calendarAccessToken ? true : false
+            calendar: calendarAccessToken ? true : false,
+            docs: docsAccessToken ? true : false
         }
 
         return { tools, accessConfig };
