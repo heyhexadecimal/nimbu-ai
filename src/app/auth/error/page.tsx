@@ -5,8 +5,9 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { AlertCircle, ExternalLink, ArrowLeft } from "lucide-react"
+import { Suspense } from "react"
 
-export default function AuthErrorPage() {
+function AuthErrorContent() {
   const searchParams = useSearchParams()
   const error = searchParams.get('error')
 
@@ -41,16 +42,6 @@ export default function AuthErrorPage() {
           color: 'text-gray-600',
           bgColor: 'bg-gray-50',
           borderColor: 'border-gray-200'
-        }
-      case 'AccessDenied':
-        return {
-          title: 'Access Denied',
-          description: 'You do not have permission to access this resource.',
-          message: 'Please contact an administrator if you believe this is an error.',
-          icon: '🚫',
-          color: 'text-red-600',
-          bgColor: 'bg-red-50',
-          borderColor: 'border-red-200'
         }
       default:
         return {
@@ -121,5 +112,29 @@ export default function AuthErrorPage() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export default function AuthErrorPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+              <span className="text-2xl">⏳</span>
+            </div>
+            <CardTitle className="text-2xl font-bold text-gray-600">
+              Loading...
+            </CardTitle>
+            <CardDescription className="text-muted-foreground">
+              Please wait while we load the error details.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    }>
+      <AuthErrorContent />
+    </Suspense>
   )
 }
