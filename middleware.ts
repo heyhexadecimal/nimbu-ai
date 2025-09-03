@@ -5,7 +5,7 @@ export default withAuth(
   function middleware(req) {
     const token = req.nextauth.token
 
-    if (token?.waitlistStatus !== 'APPROVED') {
+    if (process.env.NODE_ENV !== 'development' && token?.waitlistStatus !== 'APPROVED') {
       const response = NextResponse.redirect(new URL('/auth/signin?error=WaitlistRequired', req.url))
       response.cookies.delete('next-auth.session-token')
       response.cookies.delete('__Secure-next-auth.session-token')

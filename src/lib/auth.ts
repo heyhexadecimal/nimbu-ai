@@ -83,7 +83,7 @@ export const authOptions: NextAuthOptions = {
         const waitlistEntry = await prisma.waitlist.findUnique({
           where: { email: user.email }
         })
-        if (waitlistEntry?.status !== 'APPROVED') {
+        if (process.env.NODE_ENV !== 'development' && waitlistEntry?.status !== 'APPROVED') {
           throw new Error('WaitlistRequired')
         }
       }
