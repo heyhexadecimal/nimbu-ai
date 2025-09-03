@@ -23,7 +23,7 @@ const PromptSuggestions = ({ onSuggestionClick }: { onSuggestionClick: (content:
     ];
 
     return (
-        <div className="w-full  flex flex-col items-center justify-center gap-4 mb-40">
+        <div className="w-full flex flex-col items-center justify-center gap-4 mb-40">
             <div className='w-full flex items-center justify-center flex-col' >
                 <Image src="/logo.png" alt="Nimbu AI" width={200} height={200} />
                 <div className="text-muted-foreground text-sm">You can ask Nimbu to do anything you want</div>

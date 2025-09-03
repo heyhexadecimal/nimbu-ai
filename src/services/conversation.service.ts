@@ -1,10 +1,6 @@
 
 import { prisma } from '@/lib/prisma'
 import { config } from '@/lib/config'
-import { generateObject, generateText, LanguageModel } from 'ai'
-import { getAiModel } from '@/lib/ai'
-import { getTitleGenerationPrompt } from '@/lib/prompt'
-import z from 'zod'
 
 
 export class ConversationService {
