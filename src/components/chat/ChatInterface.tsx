@@ -14,6 +14,7 @@ import { KeysManager } from "@/components/keys-manager"
 import { getProviderForModel } from "@/lib/models"
 import PromptSuggestions from "./prompt-suggestions"
 import { Composer } from "./composer"
+import { twMerge } from "tailwind-merge"
 
 type Message = {
     id: string
@@ -225,12 +226,12 @@ export default function ChatInterface({ threadId }: { threadId?: string }) {
             >
                 <div
                     ref={viewportRef}
-                    className="flex-1 overflow-y-auto max-h-[80vh] pr-2 -mr-2 py-12"
+                    className={twMerge("flex-1 max-h-[80vh] pr-2 -mr-2 py-12", messages?.length > 0 && "overflow-y-auto")}
                     aria-label="Messages"
                 >
                     {
                         messages?.length === 0
-                            ? <div className="  h-screen flex items-center " >
+                            ? <div className="h-screen flex items-center " >
                                 <PromptSuggestions onSuggestionClick={handleSubmit} />
                             </div> : (
                                 <div className="mt-2 space-y-6">
