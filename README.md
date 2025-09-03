@@ -1,68 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+<div align="center">
+  <img src="public/logo.png" alt="Nimbu AI" width="120" height="120">
+  <h1>Nimbu</h1>
+</div>
 
-## Configuration
+**Open source & free AI assistant for your apps**
 
-### Environment Variables
+Nimbu is a community tool that lets you chat with AI and connect it to your apps. It's not a startup - just a simple, free tool that people can use and improve together.
 
-Create a `.env.local` file in the root directory with the following variables:
+Currently supports Gmail, Google Docs, Calendar, Meet, and web search. More apps coming soon!
 
+## What can you do?
+
+- **Chat with AI** using your own OpenAI or Google AI keys
+- **Connect your apps** - currently Gmail, Google Docs, Calendar, Meet
+- **Ask Nimbu to do things** like "summarize my emails" or "schedule a meeting"
+- **Search the web** for real-time information
+
+## Quick start
+
+1. **Clone and install**
 ```bash
-# Database
-DATABASE_URL="postgresql://username:password@localhost:5432/database_name"
-
-# NextAuth
-NEXTAUTH_SECRET="your-nextauth-secret"
-NEXTAUTH_URL="http://localhost:3000"
-
-# Google OAuth
-GOOGLE_CLIENT_ID="your-google-client-id"
-GOOGLE_CLIENT_SECRET="your-google-client-secret"
-
-# Chat Configuration
-MAX_USER_MESSAGES_PER_CHAT=10
+git clone https://github.com/heyhexadecimal/nimbu-ai.git
+cd nimbu-ai
+pnpm install
 ```
 
-#### Chat Message Limit
-
-The `MAX_USER_MESSAGES_PER_CHAT` environment variable controls the maximum number of user messages allowed in a single chat conversation. This helps manage token usage when sending chat history to AI models.
-
-- **Default value**: 10
-- **Valid range**: 1-100
-- **Purpose**: Prevents excessive token consumption by limiting chat history length
-
-To change the limit, simply update the environment variable and restart your application.
-
-## Getting Started
-
-First, run the development server:
-
+2. **Set up environment**
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+# Copy the example env file and add your values
+cp .env.example .env.local
+
+# Setup database
+npx prisma generate
+npx prisma migrate deploy
+```
+
+3. **Run it**
+```bash
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Visit `http://localhost:3000` and you're good to go!
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## How it works
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. **Sign in** with Google
+2. **Add your AI keys** (OpenAI or Google AI) in the app
+3. **Connect apps** you want to use (Gmail, Docs, Calendar, Meet) - totally optional
+4. **Start chatting** - ask Nimbu to help with your tasks
 
-## Learn More
+## Examples
 
-To learn more about Next.js, take a look at the following resources:
+- "What emails did I get today?"
+- "Schedule a call with John tomorrow at 2pm"
+- "Create a doc about our project plan"
+- "What's the weather like?"
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Contributing
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+This is a community project! Feel free to:
+- Report bugs
+- Add features
+- Improve the code
+- Share ideas
 
-## Deploy on Vercel
+Just fork, make changes, and send a PR.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Tech stuff
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Built with Next.js, React, TypeScript, Prisma, and LangChain. Check the code to see how everything works.
+
+---
+
+**Free to use, free to modify, free to improve** ✨
