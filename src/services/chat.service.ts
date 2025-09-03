@@ -1,15 +1,15 @@
 
-import { getAiModel } from '@/lib/ai'
 import { ConversationService } from './conversation.service'
 import { prisma } from '@/lib/prisma'
 import { getSystemPrompt } from '@/lib/prompt'
 import { AppPermissionService } from './app-permission.service'
+import { WebBrowser } from "langchain/tools/webbrowser";
 
 import { MessagesAnnotation } from "@langchain/langgraph";
 import { BaseMessage, HumanMessage, AIMessage } from "@langchain/core/messages";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
-import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
-import { ChatOpenAI } from "@langchain/openai";
+import { ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings } from "@langchain/google-genai";
+import { ChatOpenAI, OpenAIEmbeddings } from "@langchain/openai";
 import { StateGraph } from "@langchain/langgraph";
 import { StructuredTool } from '@langchain/core/tools'
 import { TavilySearch } from "@langchain/tavily";
@@ -123,7 +123,6 @@ export class ChatService {
 
 
     }
-
 
     async processChat(request: ChatRequest): Promise<ReadableStream> {
         const { messages, threadId, model, apiKey } = request
